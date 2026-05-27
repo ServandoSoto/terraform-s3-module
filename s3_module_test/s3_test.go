@@ -17,7 +17,7 @@ func TestS3Module(t *testing.T) {
 	// TerraformDir apunta al módulo que vamos a testear
 	// Vars son los valores que le pasamos a las variables del módulo
 	terraformOptions := &terraform.Options{
-		TerraformDir: "../s3_module",
+		TerraformDir: "..",
 		Vars: map[string]interface{}{
 			"bucket_name": "mi-bucket-prueba2",
 			"environment": "dev",
