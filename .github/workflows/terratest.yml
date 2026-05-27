@@ -1,0 +1,53 @@
+# Nombre del workflow — aparece en la pestaña Actions de GitHub
+name: Terratest S3 Module
+
+# on define cuándo se ejecuta el workflow
+# push a main o pull_request disparan el test automáticamente
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    # El test corre en una máquina virtual Ubuntu en GitHub
+    runs-on: ubuntu-latest
+
+    steps:
+      # Clona el repositorio en la máquina virtual
+      - name: Checkout código
+        uses: actions/checkout@v3
+
+      # Instala Go en la versión especificada
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
+      # Instala Terraform en la máquina virtual
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_wrapper: false  # necesario para que terratest capture los outputs correctamente
+
+      # Configura las credenciales de AWS usando los secrets guardados en GitHub
+      # AWS_ACCESS_KEY_ID y AWS_SECRET_ACCESS_KEY deben estar en Settings > Secrets del repo
+      - name: Configurar credenciales AWS
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      # Instala las dependencias de Go (terratest y testify)
+      - name: Instalar dependencias Go
+        run: |
+          cd s3_module_test
+          go mod tidy
+
+      # Ejecuta el test — timeout 30m para dar tiempo al despliegue en AWS
+      - name: Ejecutar Terratest
+        run: |
+          cd s3_module_test
+          go test -v -timeout 30m
